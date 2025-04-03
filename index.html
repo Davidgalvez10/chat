@@ -6,40 +6,102 @@
     <title>Chat Estilo WhatsApp</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
-        body { background-color: transparent; }
-        .chat-container { max-width: 400px; margin: auto; }
-        .message { max-width: 75%; padding: 8px 12px; border-radius: 10px; margin: 5px; }
-        .user-message { background-color: #dcf8c6; align-self: flex-end; }
-        .bot-message { background-color: #ffffff; align-self: flex-start; }
+        body { 
+            background-color: transparent; 
+            font-family: 'Arial', sans-serif;
+        }
+        .chat-container {
+            max-width: 400px;
+            margin: auto;
+            background-color: #f4f4f4;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            height: 600px;
+            overflow-y: auto;
+        }
+        .message {
+            max-width: 75%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            margin: 5px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .user-message {
+            background-color: #dcf8c6;
+            align-self: flex-end;
+            text-align: right;
+        }
+        .bot-message {
+            background-color: #ffffff;
+            align-self: flex-start;
+            text-align: left;
+        }
+        .chat-header {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #34b7f1;
+        }
+        .message-input {
+            padding: 10px;
+            width: calc(100% - 20px);
+            border-radius: 20px;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .scroll-bar {
+            max-height: 550px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
-    <div class="chat-container flex flex-col p-4 space-y-2" id="chat">
-        <div class="message bot-message">¡Hola! ¿En qué puedo ayudarte?</div>
+    <div class="chat-container flex flex-col" id="chat">
+        <div class="chat-header">
+            Chat en vivo
+        </div>
+        <div class="scroll-bar" id="message-container">
+            <div class="message bot-message">¡Hola! ¿En qué puedo ayudarte?</div>
+        </div>
+        <input type="text" class="message-input" id="input-message" placeholder="Escribe un mensaje..." />
     </div>
 
     <script>
         const chatContainer = document.getElementById('chat');
+        const messageContainer = document.getElementById('message-container');
+        const inputMessage = document.getElementById('input-message');
 
+        // Función para agregar un mensaje al chat
         function addMessage(text, isUser = false) {
             const message = document.createElement('div');
             message.classList.add('message', isUser ? 'user-message' : 'bot-message');
             message.textContent = text;
-            chatContainer.appendChild(message);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            messageContainer.appendChild(message);
+            messageContainer.scrollTop = messageContainer.scrollHeight;
         }
 
-        // Integración con StreamElements
-        const ws = new WebSocket('wss://realtime.streamelements.com/socket');
+        // Función para enviar el mensaje
+        inputMessage.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter' && inputMessage.value.trim() !== '') {
+                addMessage(inputMessage.value, true); // Agregar el mensaje del usuario
+                inputMessage.value = ''; // Limpiar el campo de texto
+            }
+        });
 
+        // WebSocket para recibir los mensajes de StreamElements (en tiempo real)
+        const ws = new WebSocket('wss://realtime.streamelements.com/socket');
+        
         ws.onopen = () => {
-            ws.send(JSON.stringify({ "method": "handshake", "data": { "channel": "itsdvezz" }}));
+            ws.send(JSON.stringify({ "method": "handshake", "data": { "channel": "TU_CHANNEL_ID" }}));
         };
 
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.type === "event" && data.provider === "twitch" && data.data.text) {
-                addMessage(data.data.text, true);
+                addMessage(data.data.text, false); // Mensaje del bot (stream)
             }
         };
     </script>
