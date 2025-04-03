@@ -1,152 +1,142 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat en Vivo</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f0f0;
-        }
-
-        .chat-container {
-            max-width: 500px;
-            margin: 20px auto;
-            background-color: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .chat-header {
-            background-color: #4CAF50;
-            padding: 10px;
-            color: white;
-            text-align: center;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .chat-messages {
-            height: 300px;
-            overflow-y: scroll;
-            padding: 10px;
-            background-color: #f9f9f9;
-        }
-
-        .message {
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 10px;
-            max-width: 70%;
-        }
-
-        .message.user {
-            background-color: #DCF8C6;
-            margin-left: auto;
-        }
-
-        .message.bot {
-            background-color: #E9E9EB;
-        }
-
-        .chat-footer {
-            display: flex;
-            padding: 10px;
-            background-color: #f1f1f1;
-            border-top: 1px solid #ddd;
-        }
-
-        .chat-footer input {
-            width: 80%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            margin-right: 10px;
-        }
-
-        .chat-footer button {
-            padding: 10px;
-            background-color: #4CAF50;
-            border: none;
-            border-radius: 50%;
-            color: white;
-            font-size: 16px;
-        }
-    </style>
-</head>
-<body>
-
-<div class="chat-container">
-    <div class="chat-header">Chat en Vivo</div>
-    <div id="chatMessages" class="chat-messages"></div>
-    <div class="chat-footer">
-        <input id="messageInput" type="text" placeholder="Escribe un mensaje..." />
-        <button id="sendButton">Enviar</button>
-    </div>
-</div>
-
-<script>
-    const chatMessages = document.getElementById('chatMessages');
-    const messageInput = document.getElementById('messageInput');
-    const sendButton = document.getElementById('sendButton');
-
-    // Conectar al WebSocket de Twitch
-    const ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
-
-    // Datos de autenticación y conexión
-    const oauthToken = 'myg108v5xwcl022vu6a1s3ydjrrg3i';  // Sustituye con tu OAuth Token
-    const twitchUser = 'itsdvezz';  // Tu nombre de usuario en Twitch
-    const twitchChannel = 'itsdvezz';  // El canal al que quieres unirte
-
-    // Abrir la conexión WebSocket
-    ws.onopen = function() {
-        ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership');
-        ws.send('PASS oauth:' + oauthToken);  // Enviar OAuth Token
-        ws.send('NICK ' + twitchUser);  // Enviar nombre de usuario
-        ws.send('JOIN #' + twitchChannel);  // Unirse al canal
-    };
-
-    // Cuando recibimos un mensaje, mostrarlo en el chat
-    ws.onmessage = function(event) {
-        const data = event.data;
-        const message = data.split('PRIVMSG #')[1]?.split(':')[1]; // Extraer mensaje
-
-        if (message) {
-            displayMessage(message, 'bot');
-        }
-    };
-
-    // Función para mostrar los mensajes en el chat
-    function displayMessage(message, className) {
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message', className);
-        messageElement.textContent = message;
-        chatMessages.appendChild(messageElement);
-        chatMessages.scrollTop = chatMessages.scrollHeight;  // Desplazar hacia abajo
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat en Vivo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #e5ddd5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
     }
 
-    // Enviar mensaje al chat cuando el usuario presiona el botón
-    sendButton.addEventListener('click', function() {
-        const message = messageInput.value.trim();
+    .chat-container {
+      width: 350px;
+      height: 500px;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background-color: #ffffff;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    }
 
-        if (message) {
-            displayMessage(message, 'user');
-            ws.send('PRIVMSG #' + twitchChannel + ' :' + message);  // Enviar mensaje al canal de Twitch
-            messageInput.value = '';  // Limpiar el campo de entrada
-        }
-    });
+    .header {
+      background-color: #25D366; /* Color WhatsApp */
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 18px;
+    }
 
-    // Enviar mensaje también si el usuario presiona Enter
-    messageInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            sendButton.click();
-        }
-    });
-</script>
+    .messages {
+      flex-grow: 1;
+      padding: 10px;
+      overflow-y: auto;
+    }
 
+    .message {
+      max-width: 80%;
+      margin: 5px 0;
+      padding: 8px 15px;
+      border-radius: 20px;
+      position: relative;
+      font-size: 14px;
+      word-wrap: break-word;
+    }
+
+    .sent {
+      background-color: #dcf8c6;
+      margin-left: auto;
+      border-bottom-right-radius: 0;
+    }
+
+    .received {
+      background-color: #ffffff;
+      border-bottom-left-radius: 0;
+      border: 1px solid #ddd;
+    }
+
+    .message-time {
+      font-size: 12px;
+      color: #888;
+      position: absolute;
+      bottom: 5px;
+      right: 10px;
+    }
+
+    input[type="text"] {
+      border: none;
+      padding: 10px;
+      border-radius: 20px;
+      width: 90%;
+      margin: 10px;
+      background-color: #f1f1f1;
+      font-size: 14px;
+    }
+
+    .send-button {
+      background-color: #25D366;
+      padding: 10px;
+      border-radius: 50%;
+      margin-left: auto;
+      cursor: pointer;
+    }
+
+    .send-button img {
+      width: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="header">Chat en Vivo</div>
+    <div class="messages" id="messages-container"></div>
+    <div class="footer">
+      <input type="text" id="message-input" placeholder="Escribe un mensaje...">
+      <button class="send-button" onclick="sendMessage()">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/69/WhatsApp.svg" alt="send" />
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Simulando mensajes de chat (en tiempo real se debería usar WebSocket)
+    function sendMessage() {
+      const messageInput = document.getElementById('message-input');
+      const messagesContainer = document.getElementById('messages-container');
+      const messageText = messageInput.value;
+      
+      if (messageText.trim() !== '') {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', 'sent');
+        messageDiv.innerHTML = `<p>${messageText}</p><span class="message-time">Justo ahora</span>`;
+        messagesContainer.appendChild(messageDiv);
+        messageInput.value = ''; // Limpiar input después de enviar
+        messagesContainer.scrollTop = messagesContainer.scrollHeight; // Scroll hacia abajo
+      }
+    }
+    
+    // Recibir mensajes (en la vida real, esto vendría de WebSocket)
+    function receiveMessage() {
+      const messagesContainer = document.getElementById('messages-container');
+      const messageDiv = document.createElement('div');
+      messageDiv.classList.add('message', 'received');
+      messageDiv.innerHTML = `<p>¡Hola! ¿Cómo estás?</p><span class="message-time">Hace 2 minutos</span>`;
+      messagesContainer.appendChild(messageDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight; // Scroll hacia abajo
+    }
+
+    // Simula la recepción de un mensaje después de 3 segundos
+    setTimeout(receiveMessage, 3000);
+  </script>
 </body>
 </html>
