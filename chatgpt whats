@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Estilo WhatsApp</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body { background-color: transparent; }
+        .chat-container { max-width: 400px; margin: auto; }
+        .message { max-width: 75%; padding: 8px 12px; border-radius: 10px; margin: 5px; }
+        .user-message { background-color: #dcf8c6; align-self: flex-end; }
+        .bot-message { background-color: #ffffff; align-self: flex-start; }
+    </style>
+</head>
+<body>
+    <div class="chat-container flex flex-col p-4 space-y-2" id="chat">
+        <div class="message bot-message">¡Hola! ¿En qué puedo ayudarte?</div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat');
+
+        function addMessage(text, isUser = false) {
+            const message = document.createElement('div');
+            message.classList.add('message', isUser ? 'user-message' : 'bot-message');
+            message.textContent = text;
+            chatContainer.appendChild(message);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Integración con StreamElements
+        const ws = new WebSocket('wss://realtime.streamelements.com/socket');
+
+        ws.onopen = () => {
+            ws.send(JSON.stringify({ "method": "handshake", "data": { "channel": "itsdvezz" }}));
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === "event" && data.provider === "twitch" && data.data.text) {
+                addMessage(data.data.text, true);
+            }
+        };
+    </script>
+</body>
+</html>
