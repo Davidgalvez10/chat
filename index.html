@@ -3,107 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Estilo WhatsApp</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>Chat en Tiempo Real</title>
     <style>
-        body { 
-            background-color: transparent; 
-            font-family: 'Arial', sans-serif;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #121212;
+            color: white;
         }
-        .chat-container {
-            max-width: 400px;
-            margin: auto;
-            background-color: #f4f4f4;
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            height: 600px;
-            overflow-y: auto;
-        }
-        .message {
-            max-width: 75%;
-            padding: 10px 15px;
-            border-radius: 15px;
-            margin: 5px;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-        .user-message {
-            background-color: #dcf8c6;
-            align-self: flex-end;
-            text-align: right;
-        }
-        .bot-message {
-            background-color: #ffffff;
-            align-self: flex-start;
-            text-align: left;
-        }
-        .chat-header {
-            text-align: center;
-            font-size: 18px;
-            margin-bottom: 15px;
-            color: #34b7f1;
-        }
-        .message-input {
+
+        #chatContainer {
+            width: 80%;
+            max-width: 600px;
+            border: 1px solid #444;
             padding: 10px;
-            width: calc(100% - 20px);
-            border-radius: 20px;
-            border: 1px solid #ccc;
-            margin-top: 10px;
-            font-size: 14px;
-        }
-        .scroll-bar {
-            max-height: 550px;
+            background-color: #222;
+            border-radius: 10px;
             overflow-y: auto;
+            height: 400px;
+        }
+
+        #messageInput {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background-color: #333;
+            color: white;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 5px;
+            background-color: #444;
+            border-radius: 5px;
+        }
+
+        .message.user {
+            background-color: #3e8e41;
+        }
+
+        .message.bot {
+            background-color: #3b8baf;
         }
     </style>
 </head>
 <body>
-    <div class="chat-container flex flex-col" id="chat">
-        <div class="chat-header">
-            Chat en vivo
-        </div>
-        <div class="scroll-bar" id="message-container">
-            <div class="message bot-message">¡Hola! ¿En qué puedo ayudarte?</div>
-        </div>
-        <input type="text" class="message-input" id="input-message" placeholder="Escribe un mensaje..." />
+    <div id="chatContainer">
+        <!-- Mensajes del chat aparecerán aquí -->
     </div>
-
+    <input id="messageInput" type="text" placeholder="Escribe un mensaje..." />
+    
     <script>
-        const chatContainer = document.getElementById('chat');
-        const messageContainer = document.getElementById('message-container');
-        const inputMessage = document.getElementById('input-message');
+        // Conexión WebSocket con el servidor correcto
+        const ws = new WebSocket('wss://astro.streamelements.com');
+        
+        // Configuración de la suscripción al WebSocket para el canal
+        const subscribeData = {
+            type: "subscribe",
+            nonce: "unique_nonce",  // Un identificador único para la solicitud
+            data: {
+                topic: "channel.follow",  // Tema del WebSocket que se desea seguir
+                room: "YOUR_CHANNEL_ID",   // Aquí pon tu Channel ID
+                token: "YOUR_ACCESS_TOKEN", // Tu token de autenticación
+                token_type: "jwt"          // Tipo de token (puede ser "apikey", "jwt", o "oauth")
+            }
+        };
 
-        // Función para agregar un mensaje al chat
-        function addMessage(text, isUser = false) {
-            const message = document.createElement('div');
-            message.classList.add('message', isUser ? 'user-message' : 'bot-message');
-            message.textContent = text;
-            messageContainer.appendChild(message);
-            messageContainer.scrollTop = messageContainer.scrollHeight;
+        // Función para mostrar los mensajes del chat
+        function displayMessage(message, className) {
+            const chatContainer = document.getElementById("chatContainer");
+            const messageElement = document.createElement("div");
+            messageElement.classList.add("message", className);
+            messageElement.textContent = message;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight; // Desplazarse al último mensaje
         }
 
-        // Función para enviar el mensaje
-        inputMessage.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter' && inputMessage.value.trim() !== '') {
-                addMessage(inputMessage.value, true); // Agregar el mensaje del usuario
-                inputMessage.value = ''; // Limpiar el campo de texto
+        // Al abrir el WebSocket, suscribimos al canal
+        ws.onopen = function () {
+            console.log("Conexión WebSocket abierta");
+            ws.send(JSON.stringify(subscribeData));
+        };
+
+        // Recibiendo mensajes desde el WebSocket
+        ws.onmessage = function (event) {
+            const message = JSON.parse(event.data);
+
+            // Ejemplo: Mostrar mensaje en la interfaz cuando alguien sigue el canal
+            if (message.type === "message" && message.data.message) {
+                displayMessage(message.data.message, "bot");
+            }
+        };
+
+        // Error en la conexión WebSocket
+        ws.onerror = function (error) {
+            console.error("Error en WebSocket:", error);
+        };
+
+        // Cerrar WebSocket
+        ws.onclose = function () {
+            console.log("Conexión WebSocket cerrada");
+        };
+
+        // Capturar evento cuando se presiona "Enter" en el input del mensaje
+        document.getElementById("messageInput").addEventListener("keypress", function (event) {
+            if (event.key === "Enter" && event.target.value.trim() !== "") {
+                const message = event.target.value;
+                displayMessage(message, "user");
+
+                // Aquí puedes añadir código para enviar el mensaje al WebSocket o procesarlo de alguna manera
+                console.log("Mensaje enviado:", message);
+
+                // Limpiar el campo de entrada
+                event.target.value = "";
             }
         });
-
-        // WebSocket para recibir los mensajes de StreamElements (en tiempo real)
-        const ws = new WebSocket('wss://realtime.streamelements.com/socket');
-        
-        ws.onopen = () => {
-            ws.send(JSON.stringify({ "method": "handshake", "data": { "channel": "itsdvezz" }}));
-        };
-
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === "event" && data.provider === "twitch" && data.data.text) {
-                addMessage(data.data.text, false); // Mensaje del bot (stream)
-            }
-        };
     </script>
 </body>
 </html>
