@@ -95,7 +95,7 @@
         const ws = new WebSocket('wss://realtime.streamelements.com/socket');
         
         ws.onopen = () => {
-            ws.send(JSON.stringify({ "method": "handshake", "data": { "channel": "TU_CHANNEL_ID" }}));
+            ws.send(JSON.stringify({ "method": "handshake", "data": { "channel": "itsdvezz" }}));
         };
 
         ws.onmessage = (event) => {
